@@ -1,91 +1,66 @@
+#include <Arduino.h>
+#include <LIDARLite.h>
+#include <string.h>
 #include <Wire.h>
-#include <LIDARlite.h>
-#include <SPI.h>
-#include <SD.h>
 
-File outputLog;
-LIDARlite lidar;
-int readingCount = 0;
-int distance = -1;
+using namespace std;
 
-enum distanceSignal {
-  far, 
-  meduim, 
-  near
-}
+LIDARLite lidar;
+uint16_t readingCount = 0;
+uint16_t distance = -1;
 
-distanceSignal currentSignal;
-
-int findSignal(int distance) {
+String findSignal(int distance) {
   if (distance < 50) {
-    return distanceSignal.near;
+    return "close";
   }
   else if (distance < 100) {
-    return distanceSignal.medium;
+    return "medium";
   }
   else {
-    return distanceSignal.far;
+    return "far";
   }
 }
 
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
 
-  while (!Serial);
-    Serial.print("Initializing SD card...");
-    if (!SD.begin(10)) {
-      Serial.println("initialization failed!");
-      while (1);
-  }
+  lidar.begin(1, true); // 400 kHz
+  lidar.configure(0);
 
-  Serial.println("initialization done.");
-
-  if (SD.exists("testData.txt")) {
-
-    Serial.println("testData.txt exists.");
-    SD.remove("testData.txt");
-    Serial.println("Clearing testData.txt");
-  } else {
-    Serial.println("example.txt doesn't exist.");
-  }
-  Serial.println("Opening new testData.txt");
-  outputLog = SD.open("testData.txt", FILE_WRITE);
-
-  lidarLite.begin(0, true);
-  lidarLite.configure(0);
 }
 
 bool getDistance(bool firstValue) {
-  int distance = -1;
+  uint16_t distance = -1;
   if (firstValue) {
     distance = lidar.distance();
   }
   else {
     distance = lidar.distance(false);
   }
-  currentSignal = findSignal(distance);
-  outputMessage += "Count: " + readingCount + "  Distance: " + distance + "  Signal: " + currentSignal;
-  outputLog.write(outputMessage);    
-  Serial.println(outputLog);
+  String currentSignal = findSignal(distance);
+  String outputMessage = "Count: " + readingCount;
+  Serial.print("Count: ");
+  Serial.print(readingCount);
+  Serial.print("  Distance: ");
+  Serial.print(distance);
+  Serial.print(" Signal: ");
+  Serial.print(currentSignal);
+  Serial.println("");
 }
 
 void loop() {
-  char outputMessage[] = "";
+  String outputMessage = "";
   if (readingCount == 100) {
-    outputLog.close();
-    exit();
+    exit(0);
   }
   else if (readingCount == 0) {
     getDistance(true);
   }
   else {
-    readingCount++;
     getDistance(false);
   }
 
   readingCount++;
-  delay(10);
-  }
-  
+  delay(1000);
 }
