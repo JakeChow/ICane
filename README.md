@@ -1,6 +1,1 @@
-<<<<<<< HEAD
-# ICane
-Arduino code for the LIDAR based walking cane that I have been codeveloping.
-=======
-readme
->>>>>>> caf14a6 (First commit)
+Arduino test harness for the Lidar-based haptic walking cane my partner Christian Harrison and I are developing. This is for Northeastern University's Enabling Engineering course which is conducted to design semester long prototypes and solutions to help people in need. The inspiration for this project was the simple fact that electric cars are becoming silent and this poses a threat to the daily life of those with visual disabilities.
