@@ -79,11 +79,11 @@ signals createSignal(lidar) {
     signed long distanceChange = abs(previousReading[lidar] - currentReading[lidar])
     signals newSignal = unknown;
     //Constant far
-    if () {
+    if (currentReading > 150 and distanceChange < 30) {
       newSignal = constantFar;
     }
     //Constant close
-    else if () {
+    else if (currentReading < 150 and distanceChange < 30) {
       newSignal = constantClose;
     }
     //slowFarToClose
