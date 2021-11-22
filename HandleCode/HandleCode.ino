@@ -22,8 +22,9 @@ unsigned long pulseWidth;
 unsigned long pulseWidth2;
 unsigned long pulseWidth3;
 int outputValue;
-unsigned long currentReading[3] = {0, 0, 0}
-unsigned long previousReading[3] = {0, 0, 0}
+unsigned int currentReading[3] = {0, 0, 0};
+unsigned int previousReading[3] = {0, 0, 0};
+unsigned int outputValues[3];
 
 
 /*
@@ -56,16 +57,16 @@ enum signals {
 /* 
  * Updates the list of previous and current reading with a new read value
  */
-void updateReadings(newValue, lidar) {
+void updateReadings(int newValue, int lidar) {
   switch (lidar) {
     case 0: 
       previousReading[0] = currentReading[0];
       currentReading[0] = newValue;
-    }    
+    
     case 1: 
       previousReading[1] = currentReading[1];
       currentReading[1] = newValue;
-    }
+    
     case 2: 
       previousReading[2] = currentReading[2];
       currentReading[2] = newValue;
@@ -75,31 +76,31 @@ void updateReadings(newValue, lidar) {
 /*
  * Creates a new signal based off the previous and current reading of a lidar
  */
-signals createSignal(lidar) {
-    signed long distanceChange = abs(previousReading[lidar] - currentReading[lidar])
+signals createSignal(int lidar) {
+    signed long distanceChange = abs(previousReading[lidar] - currentReading[lidar]);
     signals newSignal = unknown;
     //Constant far
-    if (currentReading > 150 and distanceChange < 30) {
+    if (currentReading[lidar] > 150 and distanceChange < 30) {
       newSignal = constantFar;
     }
     //Constant close
-    else if (currentReading < 150 and distanceChange < 30) {
+    else if (currentReading[lidar] < 150 and distanceChange < 30) {
       newSignal = constantClose;
     }
     //slowFarToClose
-    else if () {
+    else if (currentReading[lidar] < 150 and distanceChange < 10) {
       newSignal = slowFarToClose;
     }
     //fastFarToClose
-    else if () {
+    else if (currentReading[lidar] < 150 and distanceChange < 100) {
       newSignal = fastFarToClose;
     }
     //slowCloseToFar
-    else if () {
+    else if (currentReading[lidar] > 150 and distanceChange < 10) {
       newSignal = slowCloseToFar;
     }
     //fastCloseToFar
-    else if () {
+    else if (currentReading[lidar] > 150 and distanceChange < 100) {
       newSignal = fastCloseToFar;
     }
     //faulty
@@ -116,50 +117,48 @@ signals createSignal(lidar) {
  * @param magnitude : Representa the distance that the LIDAR read
  * @returns : An array of the corresponding output signals for the haptic motor drivers.
  */
-array createSignal(readOutput, magnitude) {
-  map outputSignals[3];
+void createSignal(int readOutput, int magnitude) {
   switch (readOutput) {
   case constantFar:
-    outputValue[0] = map(magnitude, 0, 1023, 0, 255);
-    outputValue[1] = map(magnitude, 0, 1023, 0, 255);
-    outputValue[2] = map(magnitude, 0, 1023, 0, 255);
+    outputValues[0] = map(magnitude, 0, 1023, 0, 255);
+    outputValues[1] = map(magnitude, 0, 1023, 0, 255);
+    outputValues[2] = map(magnitude, 0, 1023, 0, 255);
     break;
   case constantClose:
-    outputValue[0] = map(magnitude, 0, 1023, 0, 255);
-    outputValue[1] = map(magnitude, 0, 1023, 0, 255);
-    outputValue[2] = map(magnitude, 0, 1023, 0, 255);
+    outputValues[0] = map(magnitude, 0, 1023, 0, 255);
+    outputValues[1] = map(magnitude, 0, 1023, 0, 255);
+    outputValues[2] = map(magnitude, 0, 1023, 0, 255);
     break;
   case slowFarToClose:
-    outputValue[0] = map(magnitude, 0, 1023, 0, 255);
-    outputValue[1] = map(magnitude, 0, 1023, 0, 255);
-    outputValue[2] = map(magnitude, 0, 1023, 0, 255);
+    outputValues[0] = map(magnitude, 0, 1023, 0, 255);
+    outputValues[1] = map(magnitude, 0, 1023, 0, 255);
+    outputValues[2] = map(magnitude, 0, 1023, 0, 255);
     break;
   case fastFarToClose:
-    outputValue[0] = map(magnitude, 0, 1023, 0, 255);
-    outputValue[1] = map(magnitude, 0, 1023, 0, 255);
-    outputValue[2] = map(magnitude, 0, 1023, 0, 255);
+    outputValues[0] = map(magnitude, 0, 1023, 0, 255);
+    outputValues[1] = map(magnitude, 0, 1023, 0, 255);
+    outputValues[2] = map(magnitude, 0, 1023, 0, 255);
     break;
    case slowCloseToFar:
-    outputValue[0] = map(magnitude, 0, 1023, 0, 255);
-    outputValue[1] = map(magnitude, 0, 1023, 0, 255);
-    outputValue[2] = map(magnitude, 0, 1023, 0, 255);
+    outputValues[0] = map(magnitude, 0, 1023, 0, 255);
+    outputValues[1] = map(magnitude, 0, 1023, 0, 255);
+    outputValues[2] = map(magnitude, 0, 1023, 0, 255);
     break;
    case fastCloseToFar:
-    outputValue[0] = map(magnitude, 0, 1023, 0, 255);
-    outputValue[1] = map(magnitude, 0, 1023, 0, 255);
-    outputValue[2] = map(magnitude, 0, 1023, 0, 255);
+    outputValues[0] = map(magnitude, 0, 1023, 0, 255);
+    outputValues[1] = map(magnitude, 0, 1023, 0, 255);
+    outputValues[2] = map(magnitude, 0, 1023, 0, 255);
     break;
    case faulty: 
-    outputValue[0] = map(magnitude, 0, 0, 0, 0);
-    outputValue[1] = map(magnitude, 0, 0, 0, 0);
-    outputValue[2] = map(magnitude, 0, 0, 0, 0);
+    outputValues[0] = map(magnitude, 0, 0, 0, 0);
+    outputValues[1] = map(magnitude, 0, 0, 0, 0);
+    outputValues[2] = map(magnitude, 0, 0, 0, 0);
   default:
-    outputValue[0] = map(magnitude, 0, 0, 0, 0);
-    outputValue[1] = map(magnitude, 0, 0, 0, 0);
-    outputValue[2] = map(magnitude, 0, 0, 0, 0);
+    outputValues[0] = map(magnitude, 0, 0, 0, 0);
+    outputValues[1] = map(magnitude, 0, 0, 0, 0);
+    outputValues[2] = map(magnitude, 0, 0, 0, 0);
     break;
 }
-  return outputValue
 }
 
 
