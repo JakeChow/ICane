@@ -18,15 +18,6 @@
 #include <Sparkfun_DRV2605L.h> //SparkFun Haptic Motor Driver Library 
 #include <Wire.h> //I2C library 
 
-unsigned long pulseWidth;
-unsigned long pulseWidth2;
-unsigned long pulseWidth3;
-int outputValue;
-unsigned int currentReading[3] = {0, 0, 0};
-unsigned int previousReading[3] = {0, 0, 0};
-unsigned int outputValues[3];
-
-
 /*
  * Signal Library Layout:
  * . = short puls, - = longpulse
@@ -54,6 +45,27 @@ enum signals {
   unknown
 };
 
+
+unsigned long pulseWidth;
+unsigned long pulseWidth2;
+unsigned long pulseWidth3;
+int outputValue;
+unsigned int currentReading[3] = {0, 0, 0};
+unsigned int previousReading[3] = {0, 0, 0};
+signals signal1;
+signals signal2;
+signals signal3;
+int pulse1[3];
+int pulse2[3];
+int pulse3[3];
+int delays1[3];
+int delays2[3];
+int delays3[3];
+int outputDelays[3];
+
+
+
+
 /* 
  * Updates the list of previous and current reading with a new read value
  */
@@ -73,6 +85,36 @@ void updateReadings(int newValue, int lidar) {
     }
 }
 
+void sendPulse(int pulses[3], int lidar, int delays[3]) {
+  switch(lidar) {
+    case 0:
+      for (int i = 0; i < 3; i++) {
+        analogWrite(8, pulses[i]);
+        digitalWrite(8, HIGH);
+        delay(delays[i]);
+        digitalWrite(8, LOW);
+      }
+     
+      digitalWrite(8, LOW);
+    case 1:
+      for (int i = 0; i < 3; i++) {
+        analogWrite(9, pulses[i]);
+        digitalWrite(9, HIGH);
+        delay(delays[i]);
+        digitalWrite(9, LOW);
+      }
+      digitalWrite(9, LOW);
+    case 2:
+      for (int i = 0; i < 3; i++) {
+        analogWrite(10, pulses[i]);
+        digitalWrite(10, HIGH);
+        delay(delays[i]);
+        digitalWrite(10, LOW);
+      }
+      digitalWrite(10, LOW);
+  }
+}
+
 /*
  * Creates a new signal based off the previous and current reading of a lidar
  */
@@ -82,33 +124,85 @@ signals createSignal(int lidar) {
     //Constant far
     if (currentReading[lidar] > 150 and distanceChange < 30) {
       newSignal = constantFar;
+      Serial.print("had signaled ConstantFar");
     }
     //Constant close
     else if (currentReading[lidar] < 150 and distanceChange < 30) {
       newSignal = constantClose;
+      Serial.print("had signaled ConstantClose");
     }
     //slowFarToClose
     else if (currentReading[lidar] < 150 and distanceChange < 10) {
       newSignal = slowFarToClose;
+      Serial.print("had signaled SlowFarToClose");
     }
     //fastFarToClose
     else if (currentReading[lidar] < 150 and distanceChange < 100) {
       newSignal = fastFarToClose;
+      Serial.print("had signaled FastFarToClose");
     }
     //slowCloseToFar
     else if (currentReading[lidar] > 150 and distanceChange < 10) {
       newSignal = slowCloseToFar;
+      Serial.print("had signaled SlowCloseToFar");
     }
     //fastCloseToFar
     else if (currentReading[lidar] > 150 and distanceChange < 100) {
       newSignal = fastCloseToFar;
+      Serial.print("had signaled FastCloseToFar");
     }
     //faulty
     else {
       newSignal = faulty;
+      Serial.print(lidar + 1 + "had signaled Faulty");
     }
 
     return newSignal;
+}
+
+/*
+ * A function that creates the signal delay for a read from the LIDAR
+ * @param readOutput : Represents a signal change calculated from a reading from the lidar
+ * @param magnitude : Represents the distance that the LIDAR read
+ * @returns : An array of the corresponding output signals for the haptic motor drivers.
+ */
+void createDelays(signals signalType) {
+  switch (signalType) {
+    case constantFar:
+      outputDelays[0] = 100;
+      outputDelays[1] = 100;
+      outputDelays[2] = 100;
+      break;
+    case constantClose:
+      outputDelays[0] = 50;
+      outputDelays[1] = 50;
+      outputDelays[2] = 50;
+      break;
+    case slowFarToClose:
+      outputDelays[0] = 100;
+      outputDelays[1] = 50;
+      outputDelays[2] = 100;
+      break;
+    case fastFarToClose:
+      outputDelays[0] = 100;
+      outputDelays[1] = 50;
+      outputDelays[2] = 50;
+      break;
+    case slowCloseToFar:
+      outputDelays[0] = 50;
+      outputDelays[1] = 100;
+      outputDelays[2] = 100;
+      break;
+    case fastCloseToFar:
+      outputDelays[0] = 50;
+      outputDelays[1] = 100;
+      outputDelays[2] = 50;
+      break;
+    default:
+      outputDelays[0] = 5;
+      outputDelays[1] = 5;
+      outputDelays[2] = 5;
+    }
 }
 
 /*
@@ -117,46 +211,46 @@ signals createSignal(int lidar) {
  * @param magnitude : Representa the distance that the LIDAR read
  * @returns : An array of the corresponding output signals for the haptic motor drivers.
  */
-void createSignal(int readOutput, int magnitude) {
+void createPulse(int readOutput, int magnitude, int outputValues[3]) {
   switch (readOutput) {
   case constantFar:
-    outputValues[0] = map(magnitude, 0, 1023, 0, 255);
-    outputValues[1] = map(magnitude, 0, 1023, 0, 255);
-    outputValues[2] = map(magnitude, 0, 1023, 0, 255);
+    pulse1[0] = map(magnitude, 0, 1023, 0, 255);
+    pulse1[1] = map(magnitude, 0, 1023, 0, 255);
+    pulse1[2] = map(magnitude, 0, 1023, 0, 255);
     break;
   case constantClose:
-    outputValues[0] = map(magnitude, 0, 1023, 0, 255);
-    outputValues[1] = map(magnitude, 0, 1023, 0, 255);
-    outputValues[2] = map(magnitude, 0, 1023, 0, 255);
+    pulse1[0] = map(magnitude, 0, 1023, 0, 255);
+    pulse1[1] = map(magnitude, 0, 1023, 0, 255);
+    pulse1[2] = map(magnitude, 0, 1023, 0, 255);
     break;
   case slowFarToClose:
-    outputValues[0] = map(magnitude, 0, 1023, 0, 255);
-    outputValues[1] = map(magnitude, 0, 1023, 0, 255);
-    outputValues[2] = map(magnitude, 0, 1023, 0, 255);
+    pulse1[0] = map(magnitude, 0, 1023, 0, 255);
+    pulse1[1] = map(magnitude, 0, 1023, 0, 255);
+    pulse1[2] = map(magnitude, 0, 1023, 0, 255);
     break;
   case fastFarToClose:
-    outputValues[0] = map(magnitude, 0, 1023, 0, 255);
-    outputValues[1] = map(magnitude, 0, 1023, 0, 255);
-    outputValues[2] = map(magnitude, 0, 1023, 0, 255);
+    pulse1[0] = map(magnitude, 0, 1023, 0, 255);
+    pulse1[1] = map(magnitude, 0, 1023, 0, 255);
+    pulse1[2] = map(magnitude, 0, 1023, 0, 255);
     break;
    case slowCloseToFar:
-    outputValues[0] = map(magnitude, 0, 1023, 0, 255);
-    outputValues[1] = map(magnitude, 0, 1023, 0, 255);
-    outputValues[2] = map(magnitude, 0, 1023, 0, 255);
+    pulse1[0] = map(magnitude, 0, 1023, 0, 255);
+    pulse1[1] = map(magnitude, 0, 1023, 0, 255);
+    pulse1[2] = map(magnitude, 0, 1023, 0, 255);
     break;
    case fastCloseToFar:
-    outputValues[0] = map(magnitude, 0, 1023, 0, 255);
-    outputValues[1] = map(magnitude, 0, 1023, 0, 255);
-    outputValues[2] = map(magnitude, 0, 1023, 0, 255);
+    pulse1[0] = map(magnitude, 0, 1023, 0, 255);
+    pulse1[1] = map(magnitude, 0, 1023, 0, 255);
+    pulse1[2] = map(magnitude, 0, 1023, 0, 255);
     break;
    case faulty: 
-    outputValues[0] = map(magnitude, 0, 0, 0, 0);
-    outputValues[1] = map(magnitude, 0, 0, 0, 0);
-    outputValues[2] = map(magnitude, 0, 0, 0, 0);
+    pulse1[0] = map(magnitude, 0, 0, 0, 0);
+    pulse1[1] = map(magnitude, 0, 0, 0, 0);
+    pulse1[2] = map(magnitude, 0, 0, 0, 0);
   default:
-    outputValues[0] = map(magnitude, 0, 0, 0, 0);
-    outputValues[1] = map(magnitude, 0, 0, 0, 0);
-    outputValues[2] = map(magnitude, 0, 0, 0, 0);
+    pulse1[0] = map(magnitude, 0, 0, 0, 0);
+    pulse1[1] = map(magnitude, 0, 0, 0, 0);
+    pulse1[2] = map(magnitude, 0, 0, 0, 0);
     break;
 }
 }
@@ -226,31 +320,25 @@ void loop()
 
   pulseWidth3 = pulseIn(7, LOW);
 
-//  if (pulseWidth > pulseWidth2 && pulseWidth > pulseWidth3) {
-//    outputValue = map(pulseWidth, 0, 1023, 0, 255);
-//    // change the analog out value:
-//    analogWrite(8, outputValue);
-//
-//    digitalWrite(8, HIGH); // Set trigger LOW for continuous read
-//
-//    delay(500);
-//
-//    digitalWrite(8, LOW); // Set trigger LOW for continuous read
-//
-//    }
-//  else if (pulseWidth2 > pulseWidth && pulseWidth2 > pulseWidth3) {
-//    outputValue = map(pulseWidth2, 0, 1023, 0, 255);
-//    analogWrite(9, outputValue);
-//    digitalWrite(9, HIGH); // Set trigger LOW for continuous read
-//    delay(500);
-//    digitalWrite(9, LOW); // Set trigger LOW for continuous read
-//  }
-//  else if (pulseWidth3 > pulseWidth && pulseWidth3 > pulseWidth2) {
-//    outputValue = map(pulseWidth3, 0, 1023, 0, 255);
-//    analogWrite(10, outputValue);
-//    digitalWrite(10, HIGH); // Set trigger LOW for continuous read
-//    delay(500);
-//    digitalWrite(10, LOW); // Set trigger LOW for continuous read
-//  }
+  updateReadings(pulseWidth, 0);
+  updateReadings(pulseWidth2, 1);
+  updateReadings(pulseWidth3, 2);
+
+  signal1 = createSignal(0);
+  signal2 = createSignal(1);
+  signal3 = createSignal(2);
+
+  createPulse(signal1, pulseWidth, pulse1);
+  createDelays(signal1);
+  sendPulse(pulse1, 0, outputDelays);
+  
+  createPulse(signal2, pulseWidth2, pulse1);
+  createDelays(signal2);
+  sendPulse(pulse2, 1, delays2);
+  
+  createPulse(signal3, pulseWidth3, pulse1);
+  createDelays(signal3);
+  sendPulse(pulse3, 2, outputDelays);
+
   delay(2000);
 }
